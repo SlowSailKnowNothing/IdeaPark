@@ -1,0 +1,190 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  password      String
+  avatar        String?
+  bio           String?
+  role          String    @default("user") // user, admin
+  reputation    Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  ideas         Idea[]
+  votes         Vote[]
+  comments      Comment[]
+  agents        Agent[]
+  messages      Message[]
+  agentRatings  AgentRating[]
+}
+
+model Idea {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  tags        String   @default("[]") // JSON array of tags
+  visibility  String   @default("public") // public, private
+  status      String   @default("active") // active, archived
+  featured    Boolean  @default(false)
+
+  // Evolution tree fields
+  parentId    String?
+  parent      Idea?    @relation("IdeaEvolution", fields: [parentId], references: [id])
+  children    Idea[]   @relation("IdeaEvolution")
+  rootId      String?  // Root of the evolution tree
+  depth       Int      @default(0)
+
+  // Stats
+  voteCount   Int      @default(0)
+  commentCount Int     @default(0)
+  branchCount  Int     @default(0)
+
+  // Relations
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  agentId     String?
+  agent       Agent?   @relation(fields: [agentId], references: [id])
+
+  votes       Vote[]
+  comments    Comment[]
+  messages    Message[]
+  artifacts   Artifact[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([rootId])
+  @@index([parentId])
+  @@index([authorId])
+  @@index([voteCount])
+  @@index([createdAt])
+}
+
+model Vote {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  ideaId    String
+  idea      Idea     @relation(fields: [ideaId], references: [id])
+  rootId    String   // Evolution tree root, ensures one vote per tree
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, rootId]) // One vote per user per evolution tree
+  @@index([ideaId])
+  @@index([userId])
+}
+
+model Comment {
+  id        String    @id @default(cuid())
+  content   String
+  ideaId    String
+  idea      Idea      @relation(fields: [ideaId], references: [id])
+  authorId  String
+  author    User      @relation(fields: [authorId], references: [id])
+  parentId  String?
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   Comment[] @relation("CommentReplies")
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([ideaId])
+  @@index([parentId])
+}
+
+model Agent {
+  id            String   @id @default(cuid())
+  name          String
+  description   String
+  systemPrompt  String
+  capabilities  String   @default("[]") // JSON array
+  modelName     String   @default("gpt-4")
+  visibility    String   @default("public") // public, private
+  type          String   @default("community") // builtin, community, external
+  avatarEmoji   String   @default("🤖")
+
+  // External agent fields
+  apiKey        String?  @unique
+  trustLevel    String   @default("pending") // pending, verified, trusted, premium
+  webhookUrl    String?
+  agentCardUrl  String?
+
+  // Stats
+  usageCount    Int      @default(0)
+  avgRating     Float    @default(0)
+  ratingCount   Int      @default(0)
+
+  // Rate limiting for external agents
+  rateLimit     Int      @default(10) // per minute
+  dailyLimit    Int      @default(100)
+
+  creatorId     String?
+  creator       User?    @relation(fields: [creatorId], references: [id])
+
+  ideas         Idea[]
+  messages      Message[]
+  ratings       AgentRating[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([type])
+  @@index([trustLevel])
+  @@index([creatorId])
+}
+
+model AgentRating {
+  id       String @id @default(cuid())
+  rating   Int    // 1-5
+  review   String?
+  agentId  String
+  agent    Agent  @relation(fields: [agentId], references: [id])
+  userId   String
+  user     User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([agentId, userId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  role      String   // user, assistant, system
+  content   String
+  ideaId    String
+  idea      Idea     @relation(fields: [ideaId], references: [id])
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  agentId   String?
+  agent     Agent?   @relation(fields: [agentId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([ideaId])
+}
+
+model Artifact {
+  id        String   @id @default(cuid())
+  title     String
+  type      String   // code, document, design, data
+  content   String
+  language  String?  // For code artifacts
+  version   Int      @default(1)
+  ideaId    String
+  idea      Idea     @relation(fields: [ideaId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ideaId])
+}
