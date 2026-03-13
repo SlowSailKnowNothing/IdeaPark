@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  ideapark:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=file:./dev.db
+      - NEXTAUTH_SECRET=change-this-to-a-random-secret
+      - NEXTAUTH_URL=http://localhost:3000
+    volumes:
+      - ideapark-data:/app/prisma
+    restart: unless-stopped
+
+volumes:
+  ideapark-data:
