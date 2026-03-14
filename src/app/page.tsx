@@ -1,5 +1,5 @@
 /**
- * @source cursor @line_count 200
+ * @source cursor @line_count 210
  */
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
@@ -17,26 +17,36 @@ import {
   Globe,
 } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 async function getFeaturedIdeas() {
-  return prisma.idea.findMany({
-    where: { visibility: 'public', status: 'active' },
-    orderBy: { voteCount: 'desc' },
-    take: 6,
-    include: {
-      author: { select: { id: true, name: true, avatar: true } },
-      agent: { select: { id: true, name: true, avatarEmoji: true } },
-    },
-  })
+  try {
+    return await prisma.idea.findMany({
+      where: { visibility: 'public', status: 'active' },
+      orderBy: { voteCount: 'desc' },
+      take: 6,
+      include: {
+        author: { select: { id: true, name: true, avatar: true } },
+        agent: { select: { id: true, name: true, avatarEmoji: true } },
+      },
+    })
+  } catch {
+    return []
+  }
 }
 
 async function getStats() {
-  const [ideas, users, agents, votes] = await Promise.all([
-    prisma.idea.count({ where: { status: 'active' } }),
-    prisma.user.count(),
-    prisma.agent.count(),
-    prisma.vote.count(),
-  ])
-  return { ideas, users, agents, votes }
+  try {
+    const [ideas, users, agents, votes] = await Promise.all([
+      prisma.idea.count({ where: { status: 'active' } }),
+      prisma.user.count(),
+      prisma.agent.count(),
+      prisma.vote.count(),
+    ])
+    return { ideas, users, agents, votes }
+  } catch {
+    return { ideas: 0, users: 0, agents: 0, votes: 0 }
+  }
 }
 
 export default async function HomePage() {

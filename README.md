@@ -40,34 +40,59 @@ IdeaPark is a web platform where ideas evolve through community collaboration an
 ## Tech Stack
 
 - **Framework**: Next.js 14 (App Router, TypeScript)
-- **Database**: SQLite via Prisma ORM
+- **Database**: PostgreSQL via Prisma ORM
 - **Auth**: NextAuth.js (Credentials)
 - **UI**: Tailwind CSS
 - **Icons**: Lucide React
 
-## Getting Started
+---
+
+## Getting Started (Local Development)
 
 ### Prerequisites
 - Node.js 18+
 - npm
+- PostgreSQL database (local or cloud)
 
 ### Installation
 
 ```bash
-# Install dependencies
+# 1. Clone the repo
+git clone https://github.com/SlowSailKnowNothing/IdeaPark.git
+cd IdeaPark
+
+# 2. Install dependencies
 npm install
 
-# Set up the database
+# 3. Create .env from template
+cp .env.example .env
+
+# 4. Edit .env — set your DATABASE_URL (see below)
+# 5. Push schema to database
 npx prisma db push
 
-# Seed with sample data
+# 6. Seed sample data
 npm run db:seed
 
-# Start development server
+# 7. Start dev server
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+### Free PostgreSQL Options for Local Dev
+
+| Service | Free Tier | URL |
+|---------|-----------|-----|
+| **Neon** | 0.5 GB, always free | https://neon.tech |
+| **Supabase** | 500 MB, 2 projects | https://supabase.com |
+| **Docker** | Local, unlimited | `docker compose up db` |
+
+Using Docker for local PostgreSQL:
+```bash
+docker compose up db -d
+# DATABASE_URL="postgresql://ideapark:ideapark@localhost:5432/ideapark"
+```
 
 ### Demo Accounts
 
@@ -75,6 +100,94 @@ Open [http://localhost:3000](http://localhost:3000).
 |---------|-------|----------|
 | Admin | admin@ideapark.ai | admin123 |
 | Demo User | demo@ideapark.ai | demo123 |
+
+---
+
+## Deploy to Vercel
+
+### Step 1: Create a PostgreSQL Database
+
+推荐使用 [Neon](https://neon.tech)（免费）：
+
+1. 注册 Neon 账号 → Create Project → 选择离你近的 Region
+2. 创建后，复制 **Connection string**，格式类似：
+   ```
+   postgresql://user:pass@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require
+   ```
+
+或使用 Vercel Postgres（付费）：
+1. Vercel Dashboard → Storage → Create Database → Postgres
+2. 自动获得连接字符串
+
+### Step 2: Deploy to Vercel
+
+**方式 A：一键部署**
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/SlowSailKnowNothing/IdeaPark&env=DATABASE_URL,DIRECT_URL,NEXTAUTH_SECRET)
+
+**方式 B：手动部署**
+
+```bash
+# 1. Install Vercel CLI
+npm i -g vercel
+
+# 2. Login
+vercel login
+
+# 3. Deploy
+vercel
+```
+
+### Step 3: Configure Environment Variables
+
+在 Vercel Dashboard → Project → Settings → Environment Variables 中添加：
+
+| Variable | Value | Required |
+|----------|-------|----------|
+| `DATABASE_URL` | PostgreSQL 连接字符串 | Yes |
+| `DIRECT_URL` | PostgreSQL 直连字符串（和 DATABASE_URL 相同即可） | Yes |
+| `NEXTAUTH_SECRET` | 随机密钥（运行 `openssl rand -base64 32` 生成） | Yes |
+| `NEXTAUTH_URL` | 你的 Vercel 域名，如 `https://ideapark.vercel.app` | Yes |
+
+### Step 4: Initialize Database
+
+部署成功后，在本地执行：
+
+```bash
+# 设置环境变量指向云数据库
+export DATABASE_URL="postgresql://user:pass@host/db?sslmode=require"
+export DIRECT_URL="$DATABASE_URL"
+
+# Push schema
+npx prisma db push
+
+# Seed data
+npm run db:seed
+```
+
+或在 Vercel Dashboard 连接数据库后使用 Vercel CLI：
+```bash
+vercel env pull .env.local
+npx prisma db push
+npm run db:seed
+```
+
+---
+
+## Deploy with Docker
+
+```bash
+# Start everything (PostgreSQL + IdeaPark)
+docker compose up -d
+
+# Initialize database
+docker compose exec ideapark npx prisma db push
+docker compose exec ideapark npx tsx prisma/seed.ts
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+---
 
 ## API Documentation
 
@@ -123,6 +236,8 @@ Content-Type: application/json
 }
 ```
 
+---
+
 ## Project Structure
 
 ```
@@ -145,17 +260,18 @@ src/
 ├── lib/                  # Utilities, Prisma, auth
 └── types/                # TypeScript declarations
 prisma/
-├── schema.prisma         # Database schema
+├── schema.prisma         # Database schema (PostgreSQL)
 └── seed.ts               # Seed data
 ```
 
 ## Environment Variables
 
-```env
-DATABASE_URL="file:./dev.db"
-NEXTAUTH_SECRET="your-secret-key"
-NEXTAUTH_URL="http://localhost:3000"
-```
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `DATABASE_URL` | PostgreSQL connection string (pooled) | Yes |
+| `DIRECT_URL` | PostgreSQL direct connection string | Yes |
+| `NEXTAUTH_SECRET` | Random secret for JWT signing | Yes |
+| `NEXTAUTH_URL` | App URL (auto-set on Vercel) | Local only |
 
 ## Design Philosophy
 

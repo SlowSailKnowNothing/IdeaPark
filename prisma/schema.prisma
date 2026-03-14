@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -14,7 +15,7 @@ model User {
   password      String
   avatar        String?
   bio           String?
-  role          String    @default("user") // user, admin
+  role          String    @default("user")
   reputation    Int       @default(0)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -30,25 +31,22 @@ model User {
 model Idea {
   id          String   @id @default(cuid())
   title       String
-  description String
-  tags        String   @default("[]") // JSON array of tags
-  visibility  String   @default("public") // public, private
-  status      String   @default("active") // active, archived
+  description String   @db.Text
+  tags        String   @default("[]")
+  visibility  String   @default("public")
+  status      String   @default("active")
   featured    Boolean  @default(false)
 
-  // Evolution tree fields
   parentId    String?
   parent      Idea?    @relation("IdeaEvolution", fields: [parentId], references: [id])
   children    Idea[]   @relation("IdeaEvolution")
-  rootId      String?  // Root of the evolution tree
+  rootId      String?
   depth       Int      @default(0)
 
-  // Stats
-  voteCount   Int      @default(0)
+  voteCount    Int     @default(0)
   commentCount Int     @default(0)
   branchCount  Int     @default(0)
 
-  // Relations
   authorId    String
   author      User     @relation(fields: [authorId], references: [id])
   agentId     String?
@@ -75,18 +73,18 @@ model Vote {
   user      User     @relation(fields: [userId], references: [id])
   ideaId    String
   idea      Idea     @relation(fields: [ideaId], references: [id])
-  rootId    String   // Evolution tree root, ensures one vote per tree
+  rootId    String
 
   createdAt DateTime @default(now())
 
-  @@unique([userId, rootId]) // One vote per user per evolution tree
+  @@unique([userId, rootId])
   @@index([ideaId])
   @@index([userId])
 }
 
 model Comment {
   id        String    @id @default(cuid())
-  content   String
+  content   String    @db.Text
   ideaId    String
   idea      Idea      @relation(fields: [ideaId], references: [id])
   authorId  String
@@ -105,27 +103,24 @@ model Comment {
 model Agent {
   id            String   @id @default(cuid())
   name          String
-  description   String
-  systemPrompt  String
-  capabilities  String   @default("[]") // JSON array
+  description   String   @db.Text
+  systemPrompt  String   @db.Text
+  capabilities  String   @default("[]")
   modelName     String   @default("gpt-4")
-  visibility    String   @default("public") // public, private
-  type          String   @default("community") // builtin, community, external
+  visibility    String   @default("public")
+  type          String   @default("community")
   avatarEmoji   String   @default("🤖")
 
-  // External agent fields
   apiKey        String?  @unique
-  trustLevel    String   @default("pending") // pending, verified, trusted, premium
+  trustLevel    String   @default("pending")
   webhookUrl    String?
   agentCardUrl  String?
 
-  // Stats
   usageCount    Int      @default(0)
   avgRating     Float    @default(0)
   ratingCount   Int      @default(0)
 
-  // Rate limiting for external agents
-  rateLimit     Int      @default(10) // per minute
+  rateLimit     Int      @default(10)
   dailyLimit    Int      @default(100)
 
   creatorId     String?
@@ -145,8 +140,8 @@ model Agent {
 
 model AgentRating {
   id       String @id @default(cuid())
-  rating   Int    // 1-5
-  review   String?
+  rating   Int
+  review   String? @db.Text
   agentId  String
   agent    Agent  @relation(fields: [agentId], references: [id])
   userId   String
@@ -159,8 +154,8 @@ model AgentRating {
 
 model Message {
   id        String   @id @default(cuid())
-  role      String   // user, assistant, system
-  content   String
+  role      String
+  content   String   @db.Text
   ideaId    String
   idea      Idea     @relation(fields: [ideaId], references: [id])
   userId    String?
@@ -176,9 +171,9 @@ model Message {
 model Artifact {
   id        String   @id @default(cuid())
   title     String
-  type      String   // code, document, design, data
-  content   String
-  language  String?  // For code artifacts
+  type      String
+  content   String   @db.Text
+  language  String?
   version   Int      @default(1)
   ideaId    String
   idea      Idea     @relation(fields: [ideaId], references: [id])

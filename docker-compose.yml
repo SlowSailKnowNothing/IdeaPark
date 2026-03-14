@@ -1,17 +1,35 @@
 version: '3.8'
 
 services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ideapark
+      POSTGRES_PASSWORD: ideapark
+      POSTGRES_DB: ideapark
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ideapark"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   ideapark:
     build: .
     ports:
       - "3000:3000"
     environment:
-      - DATABASE_URL=file:./dev.db
+      - DATABASE_URL=postgresql://ideapark:ideapark@db:5432/ideapark
+      - DIRECT_URL=postgresql://ideapark:ideapark@db:5432/ideapark
       - NEXTAUTH_SECRET=change-this-to-a-random-secret
       - NEXTAUTH_URL=http://localhost:3000
-    volumes:
-      - ideapark-data:/app/prisma
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
-  ideapark-data:
+  pgdata:
