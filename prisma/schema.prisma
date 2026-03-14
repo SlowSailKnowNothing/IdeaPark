@@ -1,0 +1,185 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  password      String
+  avatar        String?
+  bio           String?
+  role          String    @default("user")
+  reputation    Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  ideas         Idea[]
+  votes         Vote[]
+  comments      Comment[]
+  agents        Agent[]
+  messages      Message[]
+  agentRatings  AgentRating[]
+}
+
+model Idea {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  tags        String   @default("[]")
+  visibility  String   @default("public")
+  status      String   @default("active")
+  featured    Boolean  @default(false)
+
+  parentId    String?
+  parent      Idea?    @relation("IdeaEvolution", fields: [parentId], references: [id])
+  children    Idea[]   @relation("IdeaEvolution")
+  rootId      String?
+  depth       Int      @default(0)
+
+  voteCount    Int     @default(0)
+  commentCount Int     @default(0)
+  branchCount  Int     @default(0)
+
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  agentId     String?
+  agent       Agent?   @relation(fields: [agentId], references: [id])
+
+  votes       Vote[]
+  comments    Comment[]
+  messages    Message[]
+  artifacts   Artifact[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([rootId])
+  @@index([parentId])
+  @@index([authorId])
+  @@index([voteCount])
+  @@index([createdAt])
+}
+
+model Vote {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  ideaId    String
+  idea      Idea     @relation(fields: [ideaId], references: [id])
+  rootId    String
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, rootId])
+  @@index([ideaId])
+  @@index([userId])
+}
+
+model Comment {
+  id        String    @id @default(cuid())
+  content   String    @db.Text
+  ideaId    String
+  idea      Idea      @relation(fields: [ideaId], references: [id])
+  authorId  String
+  author    User      @relation(fields: [authorId], references: [id])
+  parentId  String?
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   Comment[] @relation("CommentReplies")
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([ideaId])
+  @@index([parentId])
+}
+
+model Agent {
+  id            String   @id @default(cuid())
+  name          String
+  description   String   @db.Text
+  systemPrompt  String   @db.Text
+  capabilities  String   @default("[]")
+  modelName     String   @default("gpt-4")
+  visibility    String   @default("public")
+  type          String   @default("community")
+  avatarEmoji   String   @default("🤖")
+
+  apiKey        String?  @unique
+  trustLevel    String   @default("pending")
+  webhookUrl    String?
+  agentCardUrl  String?
+
+  usageCount    Int      @default(0)
+  avgRating     Float    @default(0)
+  ratingCount   Int      @default(0)
+
+  rateLimit     Int      @default(10)
+  dailyLimit    Int      @default(100)
+
+  creatorId     String?
+  creator       User?    @relation(fields: [creatorId], references: [id])
+
+  ideas         Idea[]
+  messages      Message[]
+  ratings       AgentRating[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([type])
+  @@index([trustLevel])
+  @@index([creatorId])
+}
+
+model AgentRating {
+  id       String @id @default(cuid())
+  rating   Int
+  review   String? @db.Text
+  agentId  String
+  agent    Agent  @relation(fields: [agentId], references: [id])
+  userId   String
+  user     User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([agentId, userId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  role      String
+  content   String   @db.Text
+  ideaId    String
+  idea      Idea     @relation(fields: [ideaId], references: [id])
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  agentId   String?
+  agent     Agent?   @relation(fields: [agentId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([ideaId])
+}
+
+model Artifact {
+  id        String   @id @default(cuid())
+  title     String
+  type      String
+  content   String   @db.Text
+  language  String?
+  version   Int      @default(1)
+  ideaId    String
+  idea      Idea     @relation(fields: [ideaId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ideaId])
+}
