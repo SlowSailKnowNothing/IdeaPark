@@ -1,0 +1,16 @@
+# @source cursor @line_count 30
+name = "ideapark"
+main = "src/index.ts"
+compatibility_date = "2024-03-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ideapark-db"
+# Run: wrangler d1 create ideapark-db
+# Then paste the database_id here for remote deployment
+database_id = "00000000-0000-0000-0000-000000000001"
+migrations_dir = "migrations"
+
+[vars]
+# JWT secret - override with wrangler secret in production
+# NEXTAUTH_SECRET equivalent for JWT signing
