@@ -1,0 +1,9 @@
+name = "ideapark"
+main = "src/index.ts"
+compatibility_date = "2025-03-10"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ideapark-db"
+database_id = "placeholder-replace-with-real-id"
