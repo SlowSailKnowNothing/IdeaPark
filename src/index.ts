@@ -1,5 +1,5 @@
 /**
- * @source cursor @line_count 198
+ * @source cursor @line_count 210
  */
 
 import type { Env, ApiResponse, CreateIdeaInput, UpdateIdeaInput, CreateCategoryInput, UpdateCategoryInput } from './types';
@@ -8,6 +8,7 @@ import {
   listCategories, createCategory, updateCategory, deleteCategory,
   listTags,
 } from './db';
+import { renderHTML } from './frontend';
 
 function json<T>(data: ApiResponse<T>, status = 200): Response {
   return new Response(JSON.stringify(data), {
@@ -151,10 +152,18 @@ export default {
 
       // ── Health ─────────────────────────────────────────────────────────
 
-      if (pathname === '/api/health' || pathname === '/') {
+      if (pathname === '/api/health') {
         return json({
           success: true,
           data: { service: 'IdeaPark', status: 'healthy', version: '1.0.0' },
+        });
+      }
+
+      // ── Frontend ───────────────────────────────────────────────────────
+
+      if (method === 'GET' && !pathname.startsWith('/api/')) {
+        return new Response(renderHTML(), {
+          headers: { 'Content-Type': 'text/html;charset=UTF-8' },
         });
       }
 
