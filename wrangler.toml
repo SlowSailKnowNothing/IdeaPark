@@ -1,0 +1,13 @@
+# @source cursor @line_count 13
+name = "ideapark-workers"
+main = "src/index.ts"
+compatibility_date = "2026-03-15"
+
+[observability.logs]
+enabled = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ideapark-db"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"

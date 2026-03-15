@@ -1,0 +1,32 @@
+{
+  "name": "ideapark-workers",
+  "version": "1.0.0",
+  "description": "IdeaPark infrastructure powered by Cloudflare Workers + D1",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck",
+    "cf:typegen": "wrangler types",
+    "d1:migrate:local": "wrangler d1 migrations apply ideapark-db --local",
+    "d1:migrate:remote": "wrangler d1 migrations apply ideapark-db --remote"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SlowSailKnowNothing/IdeaPark.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SlowSailKnowNothing/IdeaPark/issues"
+  },
+  "homepage": "https://github.com/SlowSailKnowNothing/IdeaPark#readme",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260313.1",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.73.0"
+  }
+}

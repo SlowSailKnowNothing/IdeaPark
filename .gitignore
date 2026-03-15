@@ -1,0 +1,7 @@
+# @source cursor @line_count 7
+node_modules/
+.wrangler/
+.dev.vars
+.DS_Store
+dist/
+coverage/
