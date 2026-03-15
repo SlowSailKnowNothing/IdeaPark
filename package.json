@@ -1,0 +1,19 @@
+{
+  "name": "ideapark",
+  "version": "1.0.0",
+  "description": "IdeaPark - An idea management platform built on Cloudflare Workers and D1",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate": "wrangler d1 migrations apply ideapark-db",
+    "db:migrate:local": "wrangler d1 migrations apply ideapark-db --local",
+    "db:create": "wrangler d1 create ideapark-db",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240725.0",
+    "typescript": "^5.5.4",
+    "wrangler": "^3.68.0"
+  }
+}
